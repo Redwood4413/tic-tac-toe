@@ -16,11 +16,20 @@ export default {
   },
   data() {
     return {
-      context: {
+      escapeMenu: {
         isVisible: false,
       },
     };
   },
+  methods: {
+    show() {
+      this.escapeMenu.isVisible = true;
+    },
+    close() {
+      this.escapeMenu.isVisible = false;
+    },
+  },
+
   computed: {
     ...mapStores(usePlayerStore, useGameStore),
   },
@@ -29,18 +38,20 @@ export default {
 </script>
 
 <template>
-  <!-- <StartingField /> -->
-  <TheEscapeMenu />
-  <TheHeader />
+  <StartingField />
+  <TheEscapeMenu v-if="escapeMenu.isVisible" @close-menu="close" />
+  <TheHeader @show="show" />
   <GamingBoard />
 </template>
 
-<style>
+<style lang="scss">
 @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Shadows+Into+Light&display=swap');
+
+@import './reset.css';
 
 :root {
-
-  font-family: 'Quicksand', nter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Quicksand', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light dark;
@@ -81,7 +92,7 @@ h1 {
 button {
   border-radius: 8px;
   border: 1px solid transparent;
-  padding: 0.6em 1.2em;
+  padding: 0.3em 0.6em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
@@ -89,12 +100,9 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
+
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 3px auto -webkit-focus-ring-color;
 }
 
 .card {
@@ -104,11 +112,13 @@ button:focus-visible {
 #app {
   display:flex;
   justify-content: center;
-  max-width: 1280px;
   margin: 0 auto;
   text-align: center;
 }
-
+.font-cursive {
+  font-family: 'Shadows Into Light', cursive;
+  font-size: x-large;
+}
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
