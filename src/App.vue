@@ -3,13 +3,13 @@ import { mapStores } from 'pinia';
 import GamingBoard from './components/GamingBoard.vue';
 import { usePlayerStore } from './stores/PlayerStore';
 import { useGameStore } from './stores/GameStore';
-import StartingField from './components/StartingField.vue';
+import StartingScreen from './components/StartingScreen.vue';
 import TheHeader from './components/layouts/TheHeader.vue';
 import TheEscapeMenu from './components/layouts/TheEscapeMenu.vue';
 
 export default {
   components: {
-    StartingField,
+    StartingScreen,
     GamingBoard,
     TheHeader,
     TheEscapeMenu,
@@ -19,17 +19,25 @@ export default {
       escapeMenu: {
         isVisible: false,
       },
+      startingScreen: {
+        isVisible: true,
+      },
     };
   },
   methods: {
-    show() {
+    showEscMenu() {
       this.escapeMenu.isVisible = true;
     },
-    close() {
+    closeEscMenu() {
       this.escapeMenu.isVisible = false;
     },
+    closeStartScreen() {
+      this.startingScreen.isVisible = false;
+    },
+    showStartScreen() {
+      this.startingScreen.isVisible = true;
+    },
   },
-
   computed: {
     ...mapStores(usePlayerStore, useGameStore),
   },
@@ -38,9 +46,16 @@ export default {
 </script>
 
 <template>
-  <StartingField />
-  <TheEscapeMenu v-if="escapeMenu.isVisible" @close-menu="close" />
-  <TheHeader @show="show" />
+  <Transition name="dialog">
+    <StartingScreen v-if="startingScreen.isVisible" @close-menu="closeStartScreen" />
+  </Transition>
+  <Transition name="esc-menu">
+    <TheEscapeMenu
+      v-if="escapeMenu.isVisible"
+      @show-menu="showStartScreen"
+      @close-menu="closeEscMenu" />
+  </Transition>
+  <TheHeader @show-menu="showEscMenu" />
   <GamingBoard />
 </template>
 
@@ -63,6 +78,33 @@ export default {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+}
+.dialog-enter-active, .dialog-leave-active {
+  transition: all .3s ease-in-out;
+}
+.dialog-enter-from, .dialog-leave-to {
+  opacity: 0;
+}
+
+.esc-menu-enter-active, .esc-menu-leave-active {
+  transition: all .3s ease-in-out;
+}
+.esc-menu.leave.from {
+  transform: translateY(-30px);
+}
+.esc-menu-enter-from{
+  opacity:0;
+  .menu-wrapper {
+    transition: all .3s ease-in-out;
+    transform: translateY(-30px);
+  }
+}
+.esc-menu-leave-to {
+  opacity:0;
+  .menu-wrapper {
+    transition: all .3s ease-in-out;
+    transform: translateY(30px);
+  }
 }
 
 a {
@@ -102,7 +144,7 @@ button {
 }
 
 button:focus-visible {
-  outline: 3px auto -webkit-focus-ring-color;
+  outline: 3px auto red;
 }
 
 .card {
@@ -119,17 +161,17 @@ button:focus-visible {
   font-family: 'Shadows Into Light', cursive;
   font-size: x-large;
 }
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
+// @media (prefers-color-scheme: light) {
+//   :root {
+//     color: #213547;
+//     background-color: #ffffff;
+//   }
+//   a:hover {
+//     color: #747bff;
+//   }
+//   button {
+//     background-color: #f9f9f9;
+//   }
+// }
 
 </style>
