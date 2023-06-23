@@ -2,23 +2,30 @@
 
 export default {
   name: 'TheEscapeMenu',
-  emits: ['close-menu'],
+  emits: ['close-menu', 'show-menu'],
+  methods: {
+    closeMenu() {
+      this.$emit('close-menu');
+    },
+    exit() {
+      this.closeMenu();
+      this.$emit('show-menu');
+    },
+  },
 };
 </script>
 
 <template>
-  <Transition>
-    <div class="escape-menu">
-      <div class="backdrop" title="Back" @click="$emit('close-menu')" @keypress="$emit('close-menu')" />
-      <div class="menu-wrapper">
-        <div class="buttons">
-          <button type="button">Continue</button>
-          <button type="button">Restart</button>
-          <button type="button">Exit</button>
-        </div>
+  <div class="escape-menu">
+    <div class="backdrop" title="Back" @click="closeMenu" @keypress="closeMenu" />
+    <div class="menu-wrapper">
+      <div class="buttons">
+        <button type="button" @click="closeMenu">Continue</button>
+        <button type="button">Restart</button>
+        <button @click="exit" type="button">Exit</button>
       </div>
     </div>
-  </Transition>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -27,14 +34,14 @@ $backdrop: 100;
 .escape-menu {
   display:flex;
   justify-content: center;
+  z-index:  $backdrop;
   align-items: center;
   position: absolute;
   width:100%;
   height:100%;
   .backdrop {
     position: absolute;
-    z-index:  $backdrop;
-    backdrop-filter: blur(5px);
+    background: rgba(0,0,0,0.3);
     width:100%;
     height:100%;
     cursor: pointer;
