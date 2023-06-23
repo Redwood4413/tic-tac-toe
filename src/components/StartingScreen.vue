@@ -3,18 +3,20 @@ import {
   uniqueNamesGenerator, Config, colors, animals,
 } from 'unique-names-generator';
 
-import { mapActions, mapStores } from 'pinia';
+import { mapActions } from 'pinia';
 import RandomIcon from './icons/RandomIcon.vue';
 import BaseSubmitButton from './UI/BaseSubmitButton.vue';
 import { useGameStore } from '../stores/GameStore';
+import { usePlayerStore } from '../stores/PlayerStore';
 
 export default {
   name: 'StartingScreen',
   emits: ['close-menu'],
-  // setup() {
-  //   const gameStore = useGameStore();
-  //   return { gameStore };
-  // },
+  setup() {
+    const gameStore = useGameStore();
+    const playerStore = usePlayerStore();
+    return { gameStore, playerStore };
+  },
   data: () => ({
     input: {
       first: {
@@ -39,7 +41,7 @@ export default {
         min: 3,
         max: 100,
       },
-      points: {
+      rounds: {
         data: 1 as number,
         isValid: true,
         min: 1,
@@ -71,8 +73,7 @@ export default {
       if (size.data < size.min || size.data > size.max || !size.data) {
         this.input.size.isValid = false;
       } else {
-        console.log(size.data);
-        this.GameStoreStore.setSize(size.data);
+        this.gameStore.setSize(size.data);
         this.input.inRow.max = size.data;
         this.input.size.isValid = true;
       }
@@ -85,13 +86,13 @@ export default {
         this.input.inRow.isValid = true;
       }
     },
-    points() {
-      const { points } = this.input;
+    rounds() {
+      const { rounds } = this.input;
 
-      if (points.data < points.min || points.data > points.max || !points.data) {
-        this.input.points.isValid = false;
+      if (rounds.data < rounds.min || rounds.data > rounds.max || !rounds.data) {
+        this.input.rounds.isValid = false;
       } else {
-        this.input.points.isValid = true;
+        this.input.rounds.isValid = true;
       }
     },
   },
@@ -112,10 +113,9 @@ export default {
     inRow() {
       return this.input.inRow.data;
     },
-    points() {
-      return this.input.points.data;
+    rounds() {
+      return this.input.rounds.data;
     },
-    ...mapStores(useGameStore),
     ...mapActions(useGameStore, ['setSize']),
   },
   methods: {
@@ -127,10 +127,30 @@ export default {
     },
     initGame() {
       this.validateInputs();
-      const { formIsValid } = this;
+      const { formIsValid, setNicknames, setInRow } = this;
       if (!formIsValid) return;
 
+      setNicknames();
+      setInRow(this.input.inRow.data);
       this.$emit('close-menu');
+    },
+    setNicknames() {
+      const { first, second } = this;
+
+      if (first) {
+        this.playerStore.setNickname(1, first);
+      } else {
+        this.playerStore.setNickname(1, 'Guest');
+      }
+
+      if (second) {
+        this.playerStore.setNickname(2, second);
+      } else {
+        this.playerStore.setNickname(2, 'Guest');
+      }
+    },
+    setInRow(inRow: number) {
+      this.gameStore.setInRow(inRow);
     },
     randomizeNickname(id: 0 | 1) {
       const config: Config = {
@@ -148,9 +168,9 @@ export default {
     },
     validateInputs() {
       const {
-        first, inRow, points, second, size,
+        first, inRow, rounds, second, size,
       } = this.input;
-      if (first.isValid && second.isValid && inRow.isValid && points.isValid && size.isValid) {
+      if (first.isValid && second.isValid && inRow.isValid && rounds.isValid && size.isValid) {
         this.formIsValid = true;
       } else {
         this.formIsValid = false;
@@ -160,6 +180,12 @@ export default {
 
   mounted() {
     this.input.inRow.max = this.input.size.data;
+    this.input.first.data = this.playerStore.players[0].nickname;
+    this.input.second.data = this.playerStore.players[1].nickname;
+    this.input.size.data = this.gameStore.boardSize;
+    this.input.inRow.data = this.gameStore.inRowToWin;
+    this.input.rounds.data = this.gameStore.rounds;
+
     this.showDialog();
   },
   components: { RandomIcon, BaseSubmitButton },
@@ -241,16 +267,16 @@ export default {
           />
           <p v-if="!input.inRow.isValid">{{ input.inRow.min }} - {{ input.inRow.max }}</p>
         </div>
-        <div class="points-wrapper">
-          <label for="points">Points</label>
+        <div class="rounds-wrapper">
+          <label for="rounds">Rounds</label>
           <input
             type="number"
-            id="points"
-            :min="input.points.min"
-            :max="input.points.max"
-            v-model.number="input.points.data"
+            id="rounds"
+            :min="input.rounds.min"
+            :max="input.rounds.max"
+            v-model.number="input.rounds.data"
           />
-          <p v-if="!input.points.isValid">{{ input.points.min }} - {{ input.points.max }}</p>
+          <p v-if="!input.rounds.isValid">{{ input.rounds.min }} - {{ input.rounds.max }}</p>
         </div>
       </div>
       <BaseSubmitButton :isValid="formIsValid">Start</BaseSubmitButton>
