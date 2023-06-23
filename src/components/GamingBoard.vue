@@ -1,37 +1,40 @@
 <script lang=ts>
-import { mapState } from 'pinia';
 import GamingBoardTile from './GamingBoardTile.vue';
 import { useGameStore } from '../stores/GameStore';
+import { usePlayerStore } from '../stores/PlayerStore';
 
 type Cell = 0 | 1 | 2;
 type Coords = { x: number, y: number };
-export type PlayerIdState = 0 | 1 | 2;
 
 export default {
   name: 'GamingBoard',
   data: () => ({
     board: [
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
+      [0, 0, 0],
+      [0, 0, 0],
+      [0, 0, 0],
     ] as Cell[][],
-    inRowToWin: 3,
     lastClick: {
-      by: 0 as PlayerIdState,
+      by: 0 as Player.Id,
       x: 0 as number,
       y: 0 as number,
     },
-    boardSize: 3 as number,
+    moveCount: 0 as number,
     zoom: 1 as number,
     position: {
-      x: 50 as number,
-      y: 50 as number,
+      x: 0 as number,
+      y: 0 as number,
     },
   }),
   setup() {
     const gameStore = useGameStore();
-    return { gameStore };
+    const playerStore = usePlayerStore();
+    return { gameStore, playerStore };
+  },
+  watch: {
+    boardSize(size) {
+      this.setBoard(size);
+    },
   },
   computed: {
     scale() {
@@ -39,28 +42,48 @@ export default {
         zoom: this.zoom,
       };
     },
-    ...mapState(useGameStore, ['hasStarted']),
+    boardSize() {
+      return this.gameStore.boardSize;
+    },
+    inRowToWin() {
+      return this.gameStore.inRowToWin;
+    },
   },
   methods: {
     handleScroll(e) {
-      const zoom = e.deltaY / 500;
+      const zoom = e.deltaY / 1000;
       if (this.zoom <= 0.6) this.zoom = 0.6;
       if (this.zoom >= 5) this.zoom = 5;
-      console.log(e.layerX);
-      this.position.x = e.layerX;
+
       this.zoom += zoom;
     },
     startTheGame() {
       this.gameStore.startTheGame();
     },
-    setBoard() {
-      const { boardSize } = this;
-      let { board } = this;
-      board = [];
-      console.log(board);
+    checkIfDraw() {
+      const { moveCount, board, setDraw } = this;
+
+      const tileCount: number = board[0].length * board.length;
+
+      if (moveCount === tileCount) setDraw();
     },
-    assignState(at: Coords, clickedBy: PlayerIdState) {
-      const { board, lastClick, checkWinner } = this;
+    setDraw() {
+      console.log('draw');
+    },
+    setBoard(boardSize: number) {
+      this.board = [];
+
+      for (let i = 0; i < boardSize; i += 1) {
+        this.board.push([]);
+        for (let j = 0; j < boardSize; j += 1) {
+          this.board[i].push(0);
+        }
+      }
+    },
+    assignState(at: Coords, clickedBy: Player.Id) {
+      const {
+        board, lastClick, checkWinner, checkIfDraw,
+      } = this;
 
       if (!this.gameStore.hasStarted) return;
 
@@ -69,14 +92,16 @@ export default {
       lastClick.x = at.x;
       lastClick.y = at.y;
 
+      this.moveCount += 1;
+      checkIfDraw();
       checkWinner(clickedBy);
     },
-    setWinner(id: PlayerIdState, msg: string) {
+    setWinner(id: Player.Id, msg: string) {
       console.log(`${id} ${msg}.`);
+      this.playerStore.addPoint(id);
     },
     isWinner(array: Cell[]): boolean {
       const { inRowToWin, lastClick } = this;
-
       let isWin: boolean = false;
       // if (array.length < inRowToWin) return false;
 
@@ -86,12 +111,12 @@ export default {
         if (isWin) return isWin;
 
         isWin = toCheck.every((id: Cell) => id === lastClick.by);
-
         return isWin;
       });
+
       return isWin;
     },
-    checkWinner(id: PlayerIdState) {
+    checkWinner(id: Player.Id) {
       const { isWinner, setWinner } = this;
       const {
         getRowArray, getColumnArray, getDiagonalBottomToRight, getDiagonalTopToRight,
@@ -109,9 +134,9 @@ export default {
       }
 
       const diagonalBottomToRight: Cell[] = getDiagonalBottomToRight();
-      const iagonalTopToRight: Cell[] = getDiagonalTopToRight();
+      const diagonalTopToRight: Cell[] = getDiagonalTopToRight();
 
-      if (isWinner(diagonalBottomToRight) || isWinner(iagonalTopToRight)) {
+      if (isWinner(diagonalBottomToRight) || isWinner(diagonalTopToRight)) {
         setWinner(id, 'wins in a diagonal!');
       }
     },
@@ -193,16 +218,14 @@ export default {
   <div
     class="gaming-board"
     @wheel="handleScroll($event)"
+    ref="gamingBoard"
     :style="{
       scale: zoom,
-      left: `${position.x}%`,
-      top: `${position.y}%`,
+      // left: `${position.x}%`,
+      // top: `${position.y}%`,
     }"
   >
-    <div class="cover" v-if="!hasStarted">
-      <button type="button" @click="startTheGame">Start</button>
-    </div>
-    <!-- <input type="number" @change="setBoard" v-model="boardSize" /> -->
+
     <div
       v-for="(row, y) in board"
       class="row"
@@ -224,11 +247,13 @@ export default {
 $gap: 2px;
   .gaming-board {
     display:flex;
+    position: absolute;
     flex-direction: column;
     gap:$gap;
-    transition: scale .2s ease-in;
-    position: absolute;
-    //transform: translate(50%,-50%);
+    top:50%;
+    left:50%;
+    transform: translate(-50%, -50%);
+    transition: scale .1s linear;
     .cover {
       position: absolute;
       display:flex;
