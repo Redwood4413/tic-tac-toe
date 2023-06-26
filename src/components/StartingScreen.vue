@@ -3,7 +3,6 @@ import {
   uniqueNamesGenerator, Config, colors, animals,
 } from 'unique-names-generator';
 
-import { mapActions } from 'pinia';
 import RandomIcon from './icons/RandomIcon.vue';
 import BaseSubmitButton from './UI/BaseSubmitButton.vue';
 import { useGameStore } from '../stores/GameStore';
@@ -116,7 +115,6 @@ export default {
     rounds() {
       return this.input.rounds.data;
     },
-    ...mapActions(useGameStore, ['setSize']),
   },
   methods: {
     hideDialog() {
@@ -127,11 +125,17 @@ export default {
     },
     initGame() {
       this.validateInputs();
-      const { formIsValid, setNicknames, setInRow } = this;
-      if (!formIsValid) return;
 
-      setNicknames();
-      setInRow(this.input.inRow.data);
+      if (!this.formIsValid) return;
+
+      const { gameStore } = this;
+
+      this.playerStore.initTurn();
+      this.setNicknames();
+
+      gameStore.startTheGame();
+      gameStore.setInRow(this.input.inRow.data);
+      gameStore.setRounds(this.input.rounds.data);
       this.$emit('close-menu');
     },
     setNicknames() {
@@ -148,9 +152,6 @@ export default {
       } else {
         this.playerStore.setNickname(2, 'Guest');
       }
-    },
-    setInRow(inRow: number) {
-      this.gameStore.setInRow(inRow);
     },
     randomizeNickname(id: 0 | 1) {
       const config: Config = {
@@ -184,7 +185,7 @@ export default {
     this.input.second.data = this.playerStore.players[1].nickname;
     this.input.size.data = this.gameStore.boardSize;
     this.input.inRow.data = this.gameStore.inRowToWin;
-    this.input.rounds.data = this.gameStore.rounds;
+    this.input.rounds.data = this.gameStore.rounds.final;
 
     this.showDialog();
   },
@@ -294,9 +295,6 @@ export default {
     background: none;
     border:0;
     outline: 0;
-    min-width: 600px;
-    min-height: 400px;
-    max-height: 90vh;
     overflow-y: auto;
     gap:1em;
     p {
