@@ -1,6 +1,5 @@
 <script lang="ts">
-import { mapStores } from 'pinia';
-import GamingBoard from './components/GamingBoard.vue';
+import GamingBoard from './components/gaming-board/GamingBoard.vue';
 import { usePlayerStore } from './stores/PlayerStore';
 import { useGameStore } from './stores/GameStore';
 import StartingScreen from './components/StartingScreen.vue';
@@ -13,6 +12,12 @@ export default {
     GamingBoard,
     TheHeader,
     TheEscapeMenu,
+  },
+  setup() {
+    const gameStore = useGameStore();
+    const playerStore = usePlayerStore();
+
+    return { gameStore, playerStore };
   },
   data() {
     return {
@@ -37,9 +42,6 @@ export default {
     showStartScreen() {
       this.startingScreen.isVisible = true;
     },
-  },
-  computed: {
-    ...mapStores(usePlayerStore, useGameStore),
   },
 };
 
@@ -154,8 +156,9 @@ button:focus-visible {
 #app {
   display:flex;
   justify-content: center;
-  margin: 0 auto;
-  text-align: center;
+  align-items: center;
+  height: 100vh;
+  width:100vw;
 }
 .font-cursive {
   font-family: 'Shadows Into Light', cursive;
